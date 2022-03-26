@@ -53,7 +53,6 @@ func httpLogFormatter(logger *zap.Logger) func(io.Writer, handlers.LogFormatterP
 		telemetryConfiguration.MaxBatchInterval = 10 * time.Second
 		client := appinsights.NewTelemetryClientFromConfig(telemetryConfiguration)
 
-		//client := appinsights.NewTelemetryClient("65a9a116-b453-4feb-8b8c-58efedd18626")
 		request := appinsights.NewRequestTelemetry(req.Method, uri, 1 , http.StatusText(params.StatusCode))
         	request.Source = host 
 		request.Measurements["POST size"] = float64(params.Size)

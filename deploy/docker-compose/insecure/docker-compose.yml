@@ -12,6 +12,3 @@ services:
     restart: always
     ports:
             - "80:80"
-              #command: "--database redis --redis redis://:xX34Ejv2U77TGI9lZ9rzjIwDlhQZWNFHVAzCaKxKKLU=@10.1.0.6:6379 --port 80"
-    #command: "--database redis --redis redis://:xX34Ejv2U77TGI9lZ9rzjIwDlhQZWNFHVAzCaKxKKLU=@yopass.redis.cache.windows.net:6379 --port 80"
-    #command: "--memcached=memcached:11211 --port 80"

@@ -45,7 +45,7 @@ func init() {
 
 func main() {
 	logger := configureZapLogger()
-	var aiKey string = viper.GetString(os.Getenv("APPLICATIONINSIGHTSKEY")) //65a9a116-b453-4feb-8b8c-58efedd18626"
+	var aiKey string = viper.GetString(os.Getenv("APPLICATIONINSIGHTSKEY"))
 	client := appinsights.NewTelemetryClient(aiKey)
 
 	var db server.Database
