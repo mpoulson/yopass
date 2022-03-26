@@ -1,6 +1,8 @@
 module github.com/jhaals/yopass
 
 require (
+	code.cloudfoundry.org/clock v1.0.0 // indirect
+	github.com/Microsoft/ApplicationInsights-Go v0.4.2
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 	github.com/go-redis/redis/v7 v7.4.1
 	github.com/gofrs/uuid v4.2.0+incompatible
@@ -10,6 +12,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.1
+	github.com/microsoft/ApplicationInsights-Go v0.4.4 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.21.0

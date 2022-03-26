@@ -5,10 +5,12 @@ const styles = { paddingTop: 1, paddingBottom: 1 };
 
 const ErrorPage = (props: { error?: Error }) => {
   const { t } = useTranslation();
-  if (!props.error) {
+  const classes = useStyles();
+ 
+ if (!props.error) {
     return null;
   }
-
+  
   return (
     <div>
       <Typography variant="h4">{t('error.title')}</Typography>
@@ -33,4 +35,5 @@ const ErrorPage = (props: { error?: Error }) => {
     </div>
   );
 };
+
 export default ErrorPage;

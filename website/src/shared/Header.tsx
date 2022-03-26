@@ -1,31 +1,26 @@
+<<<<<<< Updated upstream
 import { AppBar, Toolbar, Typography, Button, Box, Link } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
+import makeStyles from '@mui/styles/makeStyles';
 
 export const Header = () => {
-  const { t } = useTranslation();
-  const location = useLocation();
-  const isOnUploadPage = location.pathname.includes('upload');
   const base = process.env.PUBLIC_URL || '';
   const home = base + '/#/';
-  const upload = base + '/#/upload';
+  #const upload = base + '/#/upload';
+  const classes = useStyles();
   return (
     <AppBar position="static" color="transparent" sx={{ marginBottom: 4 }}>
       <Toolbar>
         <Link href={home} color="inherit" underline="none">
           <Typography variant="h6" component="div">
-            Yopass
-            <Box
-              sx={{
-                verticalAlign: 'middle',
-                paddingLeft: '5px',
-                width: '40px',
-                height: '40px',
-              }}
-              component="img"
+            Cred
+            <img
+              className={classes.logo}
+              width="40"
               height="40"
               alt=""
-              src="yopass.svg"
+              src="cred.svg"
             />
           </Typography>
         </Link>
@@ -34,14 +29,6 @@ export const Header = () => {
             marginLeft: 'auto',
           }}
         >
-          <Button
-            component={Link}
-            href={isOnUploadPage ? home : upload}
-            variant="contained"
-            color="primary"
-          >
-            {isOnUploadPage ? t('header.buttonHome') : t('header.buttonUpload')}
-          </Button>
         </Box>
       </Toolbar>
     </AppBar>

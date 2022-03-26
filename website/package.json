@@ -10,6 +10,8 @@
     "@fortawesome/free-solid-svg-icons": "^5.15.4",
     "@fortawesome/react-fontawesome": "^0.1.18",
     "@mui/material": "^5.5.1",
+    "@microsoft/applicationinsights-react-js": "^3.0.0",
+    "@microsoft/applicationinsights-web": "^2.5.5", 
     "file-saver": "^2.0.5",
     "i18next": "^21.6.14",
     "i18next-browser-languagedetector": "^6.1.3",

@@ -5,9 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"net/http"
 	"strings"
-
 	"github.com/jhaals/yopass/pkg/server"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights"
 )
 
 var logLevel zapcore.Level
@@ -27,8 +28,11 @@ func init() {
 	pflag.String("memcached", "localhost:11211", "memcached address")
 	pflag.Int("metrics-port", -1, "metrics server listen port")
 	pflag.String("redis", "redis://localhost:6379/0", "Redis URL")
+	pflag.String("redis-password", "", "Authentication password for Redis")
+	pflag.Bool("redisTLS", true, "force Redis TLS")
 	pflag.String("tls-cert", "", "path to TLS certificate")
 	pflag.String("tls-key", "", "path to TLS key")
+	pflag.String("applicationinsightskey", "", "Application Insights Instrumentation key")
 	pflag.Bool("force-onetime-secrets", false, "reject non onetime secrets from being created")
 	pflag.CommandLine.AddGoFlag(&flag.Flag{Name: "log-level", Usage: "Log level", Value: &logLevel})
 
@@ -41,6 +45,8 @@ func init() {
 
 func main() {
 	logger := configureZapLogger()
+	var aiKey string = viper.GetString(os.Getenv("APPLICATIONINSIGHTSKEY")) //65a9a116-b453-4feb-8b8c-58efedd18626"
+	client := appinsights.NewTelemetryClient(aiKey)
 
 	var db server.Database
 	switch database := viper.GetString("database"); database {
@@ -50,12 +56,16 @@ func main() {
 		logger.Debug("configured Memcached", zap.String("address", memcached))
 	case "redis":
 		redis := viper.GetString("redis")
+		redispassword := viper.GetString("redis-password")
+		redisTLS := viper.GetBool("redisTLS")
 		var err error
-		db, err = server.NewRedis(redis)
+		db, err = server.NewRedis(redis,redispassword,redisTLS)
 		if err != nil {
 			logger.Fatal("invalid Redis URL", zap.Error(err))
 		}
 		logger.Debug("configured Redis", zap.String("url", redis))
+		logger.Debug("configured Redis TLS", zap.Bool("redisTLS", redisTLS))
+		client.TrackEvent("configured Redis:" + redis)
 	default:
 		logger.Fatal("unsupported database, expected 'memcached' or 'redis'", zap.String("database", database))
 	}
@@ -71,7 +81,8 @@ func main() {
 	go func() {
 		addr := fmt.Sprintf("%s:%d", viper.GetString("address"), viper.GetInt("port"))
 		logger.Info("Starting yopass server", zap.String("address", addr))
-		y := server.New(db, viper.GetInt("max-length"), registry, viper.GetBool("force-onetime-secrets"), logger)
+		client.TrackEvent("Starting yopass server:"+ addr)
+		y := server.New(db, viper.GetInt("max-length"), registry, viper.GetBool("force-onetime-secrets"), logger,client)
 		errc <- listenAndServe(addr, y.HTTPHandler(), cert, key)
 	}()
 
@@ -85,6 +96,7 @@ func main() {
 
 	err := <-errc
 	logger.Fatal("yopass stopped unexpectedly", zap.Error(err))
+	client.TrackEvent("yopass stopped unexpectedly" + err.Error())
 }
 
 // listenAndServe starts a HTTP server on the given addr. It uses TLS if both

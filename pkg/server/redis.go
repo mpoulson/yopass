@@ -3,16 +3,28 @@ package server
 import (
 	"encoding/json"
 	"time"
-
+	"crypto/tls"
 	"github.com/go-redis/redis/v7"
 	"github.com/jhaals/yopass/pkg/yopass"
 )
-
+func RedisTLSConfig() *tls.Config {
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+		MinVersion:   tls.VersionTLS12,
+	}
+	return tlsConfig
+}
 // NewRedis returns a new Redis database client
-func NewRedis(url string) (Database, error) {
+func NewRedis(url string, password string, useTLS bool) (Database, error) {
 	options, err := redis.ParseURL(url)
 	if err != nil {
 		return nil, err
+	}
+	//if password != nil {
+		options.Password = password 
+//	}
+	if useTLS {
+		options.TLSConfig = RedisTLSConfig()
 	}
 	client := redis.NewClient(options)
 	return &Redis{client}, nil

@@ -4,14 +4,23 @@ import (
 	"github.com/gorilla/handlers"
 	"go.uber.org/zap"
 	"io"
+	"os"
 	"net"
+	"time"
+	"net/http"
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights"
+)
+const (
+	// The value of "type" key in configuration.
+	typeStr         = "azuremonitor"
+	defaultEndpoint = "https://dc.services.visualstudio.com/v2/track"
 )
 
 func httpLogFormatter(logger *zap.Logger) func(io.Writer, handlers.LogFormatterParams) {
 	if logger == nil {
 		logger = zap.NewNop()
 	}
-
+	
 	return func(_ io.Writer, params handlers.LogFormatterParams) {
 		var req = params.Request
 		if req == nil {
@@ -38,7 +47,18 @@ func httpLogFormatter(logger *zap.Logger) func(io.Writer, handlers.LogFormatterP
 		if uri == "" {
 			uri = params.URL.RequestURI()
 		}
+		telemetryConfiguration := appinsights.NewTelemetryConfiguration(os.Getenv("APPLICATIONINSIGHTSKEY"))
+		telemetryConfiguration.EndpointUrl = defaultEndpoint
+		telemetryConfiguration.MaxBatchSize = 1024 
+		telemetryConfiguration.MaxBatchInterval = 10 * time.Second
+		client := appinsights.NewTelemetryClientFromConfig(telemetryConfiguration)
 
+		//client := appinsights.NewTelemetryClient("65a9a116-b453-4feb-8b8c-58efedd18626")
+		request := appinsights.NewRequestTelemetry(req.Method, uri, 1 , http.StatusText(params.StatusCode))
+        	request.Source = host 
+		request.Measurements["POST size"] = float64(params.Size)
+		client.Track(request)
+		
 		logger.Info(
 			"Request handled",
 			zap.String("host", host),

@@ -13,6 +13,7 @@ import (
 	"github.com/jhaals/yopass/pkg/yopass"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights"
 )
 
 // Server struct holding database and settings.
@@ -23,10 +24,11 @@ type Server struct {
 	registry            *prometheus.Registry
 	forceOneTimeSecrets bool
 	logger              *zap.Logger
+	appInsights		appinsights.TelemetryClient
 }
 
 // New is the main way of creating the server.
-func New(db Database, maxLength int, r *prometheus.Registry, forceOneTimeSecrets bool, logger *zap.Logger) Server {
+func New(db Database, maxLength int, r *prometheus.Registry, forceOneTimeSecrets bool, logger *zap.Logger, appInsights appinsights.TelemetryClient) Server {
 	if logger == nil {
 		logger = zap.NewNop()
 	}
@@ -36,13 +38,14 @@ func New(db Database, maxLength int, r *prometheus.Registry, forceOneTimeSecrets
 		registry:            r,
 		forceOneTimeSecrets: forceOneTimeSecrets,
 		logger:              logger,
+		appInsights:		appInsights,
 	}
 }
 
 // createSecret creates secret
 func (y *Server) createSecret(w http.ResponseWriter, request *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-
+	//y.appInsights.TrackEvent("FAXXX")
 	decoder := json.NewDecoder(request.Body)
 	var s yopass.Secret
 	if err := decoder.Decode(&s); err != nil {
@@ -99,9 +102,11 @@ func (y *Server) getSecret(w http.ResponseWriter, request *http.Request) {
 	w.Header().Set("Cache-Control", "private, no-cache")
 
 	secretKey := mux.Vars(request)["key"]
+	y.appInsights.TrackEvent("getSecret:" + secretKey)
 	secret, err := y.db.Get(secretKey)
 	if err != nil {
 		y.logger.Debug("Secret not found", zap.Error(err), zap.String("key", secretKey))
+		y.appInsights.TrackEvent("Error: Secret not found:" + secretKey)
 		http.Error(w, `{"message": "Secret not found"}`, http.StatusNotFound)
 		return
 	}
@@ -109,12 +114,14 @@ func (y *Server) getSecret(w http.ResponseWriter, request *http.Request) {
 	data, err := secret.ToJSON()
 	if err != nil {
 		y.logger.Error("Failed to encode request", zap.Error(err), zap.String("key", secretKey))
+		y.appInsights.TrackEvent("Error: Failed to encode request:" + secretKey)
 		http.Error(w, `{"message": "Failed to encode secret"}`, http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := w.Write(data); err != nil {
 		y.logger.Error("Failed to write response", zap.Error(err), zap.String("key", secretKey))
+		y.appInsights.TrackEvent("Error: Failed to write response:" + secretKey)
 	}
 }
 
@@ -125,6 +132,7 @@ func (y *Server) deleteSecret(w http.ResponseWriter, request *http.Request) {
 	deleted, err := y.db.Delete(mux.Vars(request)["key"])
 	if err != nil {
 		http.Error(w, `{"message": "Failed to delete secret"}`, http.StatusInternalServerError)
+		y.appInsights.TrackEvent("Error: Failed to delete secret:" + (mux.Vars(request)["key"]))
 		return
 	}
 
@@ -166,7 +174,7 @@ const keyParameter = "{key:(?:[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})}"
 // validExpiration validates that expiration is either
 // 3600(1hour), 86400(1day) or 604800(1week)
 func validExpiration(expiration int32) bool {
-	for _, ttl := range []int32{3600, 86400, 604800} {
+	for _, ttl := range []int32{3600, 28800, 86400, 259200, 432000, 604800} {
 		if ttl == expiration {
 			return true
 		}
@@ -184,6 +192,19 @@ func SecurityHeadersHandler(next http.Handler) http.Handler {
 		"frame-ancestors 'none'",
 		"script-src 'self'",
 		"style-src 'self' 'unsafe-inline'",
+		"base-uri 'self'",
+		"script-src 'self' https://storage.googleapis.com https://dc.services.visualstudio.com 'unsafe-inline'",
+		"img-src 'self'",
+		"upgrade-insecure-requests",
+		"block-all-mixed-content",
+		"media-src 'self'",
+		"object-src 'none'",
+		"font-src 'self' https://fonts.gstatic.com",
+		"form-action 'self'",
+		"frame-ancestors 'none'",
+		"connect-src 'self' https://dc.services.visualstudio.com",
+		//"script-src 'self' 'unsafe-inline' https://storage.googleapis.com",
+		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

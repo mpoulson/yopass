@@ -8,28 +8,18 @@ import randomString, {
 import { useState } from 'react';
 import Result from '../displaySecret/Result';
 import Error from '../shared/Error';
-import Expiration from '../shared/Expiration';
 import {
   Checkbox,
   FormGroup,
   FormControlLabel,
   TextField,
-  Typography,
-  Button,
   Grid,
-  Box,
   InputLabel,
 } from '@mui/material';
 
 const CreateSecret = () => {
-  const { t } = useTranslation();
   const {
-    control,
-    register,
     errors,
-    handleSubmit,
-    watch,
-    setError,
     clearErrors,
   } = useForm({
     defaultValues: {
@@ -37,8 +27,7 @@ const CreateSecret = () => {
       secret: '',
     },
   });
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState({
+  const [result] = useState({
     password: '',
     uuid: '',
     customPassword: false,
@@ -100,51 +89,6 @@ const CreateSecret = () => {
         message={errors.secret?.message}
         onClick={() => clearErrors('secret')}
       />
-      <Typography component="h1" variant="h4" align="center">
-        {t('create.title')}
-      </Typography>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Grid container justifyContent="center" paddingTop={1}>
-          <TextField
-            inputRef={register({ required: true })}
-            multiline={true}
-            name="secret"
-            margin="dense"
-            fullWidth
-            label={t('create.inputSecretLabel')}
-            rows="4"
-            autoFocus={true}
-            onKeyDown={onKeyDown}
-            placeholder={t('create.inputSecretPlaceholder')}
-            inputProps={{ spellCheck: 'false', 'data-gramm': 'false' }}
-          />
-          <Grid container justifyContent="center" marginTop={2}>
-            <Expiration control={control} />
-          </Grid>
-          <Grid container alignItems="center" direction="column">
-            <OneTime register={register} />
-            <SpecifyPasswordToggle register={register} />
-            {!generateDecryptionKey && (
-              <SpecifyPasswordInput register={register} />
-            )}
-          </Grid>
-          <Grid container justifyContent="center">
-            <Box p={2} pb={4}>
-              <Button
-                onClick={() => handleSubmit(onSubmit)()}
-                variant="contained"
-                disabled={loading}
-              >
-                {loading ? (
-                  <span>{t('create.buttonEncryptLoading')}</span>
-                ) : (
-                  <span>{t('create.buttonEncrypt')}</span>
-                )}
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </form>
     </>
   );
 };

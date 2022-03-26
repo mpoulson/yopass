@@ -7,6 +7,9 @@ RUN go build ./cmd/yopass && go build ./cmd/yopass-server
 FROM node:16 as website
 COPY website /website
 WORKDIR /website
+#ENV REACT_APP_FALLBACK_LANGUAGE=en
+#ENV APPLICATIONINSIGHTSKEY="65a9a116-b453-4feb-8b8c-58efedd18626"
+
 RUN yarn install && yarn build
 
 FROM gcr.io/distroless/base
